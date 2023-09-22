@@ -119,7 +119,6 @@ app.post("/user", async (req, res) => {
 })
 
 app.post("/creat", (req, res) => {
-    console.log(req.body)
     const downloadsPath = path.join(os.homedir(), 'Downloads');
 
     const pastaPai = '../faceApi/labels';
@@ -135,6 +134,9 @@ app.post("/creat", (req, res) => {
         } else {
             console.log('Usuário(diretório) já existe.');
         }
+        const json = fs.readdirSync('../faceApi/labels');
+        const jsonString = JSON.stringify(json, null, 2);
+        fs.writeFileSync('dados.json', jsonString);
         moveCapture();
     }
 
@@ -155,20 +157,46 @@ app.post("/creat", (req, res) => {
     function rename() {
         const arquivosPng = fs.readdirSync(dbUsersPath).filter(arquivo => arquivo.endsWith('.png'));
         arquivosPng.sort();
-
         let contador = 1;
         for (const nomeAtual of arquivosPng) {
-            const novoNome = `${contador}.png`;
-            const caminhoAtual = path.join(dbUsersPath, nomeAtual);
-            const caminhoNovo = path.join(dbUsersPath, novoNome);
-            fs.renameSync(caminhoAtual, caminhoNovo);
-            console.log(`Arquivo ${nomeAtual} renomeado para ${novoNome}`);
-            contador++;
+            if (nomeAtual !== ('1.png' && '2.png' && '3.png' && '4.png' && '5.png' && '6.png' && '7.png' && '8.png' && '9.png' && '10.png')) {
+                const novoNome = `${contador}.png`;
+                const caminhoAtual = path.join(dbUsersPath, nomeAtual);
+                const caminhoNovo = path.join(dbUsersPath, novoNome);
+                fs.renameSync(caminhoAtual, caminhoNovo);
+                console.log(`Arquivo ${nomeAtual} renomeado para ${novoNome}`);
+                contador++;
+            }
         }
     }
 
     createDir();
 })
+app.use(express.static(path.join(__dirname, '../faceApi/labels/gu')));
+
+app.get("/visitant", async (req, res) => {
+    const label = fs.readdirSync("../faceApi/labels");
+    const labelDir = path.join(__dirname, '../faceApi/labels');
+    const visitant = []
+    label.map(async (label) => {//retorna os descritores das pessoas a serem identificadas
+
+        const imagePath = path.join(labelDir, label, '1.png');
+        const img = fs.readFileSync(imagePath);
+        visitant.push({
+            name: label,
+            img: img
+        })
+    })
+    res.json(visitant);
+})
+
+app.delete("/visitant/:name", async (req, res) => {
+    fs.rmdirSync(`../faceApi/labels/${req.params.name}/`, { recursive: true });
+    const json = fs.readdirSync('../faceApi/labels');
+    const jsonString = JSON.stringify(json, null, 2);
+    fs.writeFileSync('dados.json', jsonString);
+})
+
 
 app.listen(8080, () => {
     console.log("Servidor iniciado na porta 8080: http://localhost:8080");
